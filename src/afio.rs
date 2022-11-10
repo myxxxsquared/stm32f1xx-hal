@@ -4,7 +4,7 @@ use crate::pac::{afio, AFIO, RCC};
 use crate::rcc::{Enable, Reset};
 
 use crate::gpio::{
-    Debugger, Floating, Input, PA15, {PB3, PB4},
+    Debugger, Floating, Input,  PA13, PA14, PA15, PB3, PB4
 };
 
 pub trait AfioExt {
@@ -85,7 +85,7 @@ impl MAPR {
     where
         F: for<'w> FnOnce(&afio::mapr::R, &'w mut afio::mapr::W) -> &'w mut afio::mapr::W,
     {
-        let debug_bits = if self.jtag_enabled { 0b000 } else { 0b010 };
+        let debug_bits = if self.jtag_enabled { 0b000 } else { 0b100 };
         self.mapr()
             .modify(unsafe { |r, w| mod_fn(r, w).swj_cfg().bits(debug_bits) });
     }
@@ -94,10 +94,14 @@ impl MAPR {
     #[allow(clippy::redundant_field_names, clippy::type_complexity)]
     pub fn disable_jtag(
         &mut self,
+        pa13: PA13<Debugger>,
+        pa14: PA14<Debugger>,
         pa15: PA15<Debugger>,
         pb3: PB3<Debugger>,
         pb4: PB4<Debugger>,
     ) -> (
+        PA13<Input<Floating>>,
+        PA14<Input<Floating>>,
         PA15<Input<Floating>>,
         PB3<Input<Floating>>,
         PB4<Input<Floating>>,
@@ -107,7 +111,7 @@ impl MAPR {
         self.modify_mapr(|_, w| w);
 
         // NOTE(unsafe) The pins are now in the good state.
-        unsafe { (pa15.activate(), pb3.activate(), pb4.activate()) }
+        unsafe { (pa13.activate(), pa14.activate(), pa15.activate(), pb3.activate(), pb4.activate()) }
     }
 }
 
